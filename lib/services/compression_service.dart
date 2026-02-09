@@ -41,8 +41,8 @@ class CompressionService {
         pdf.addPage(
           pw.Page(
             pageFormat: PdfPageFormat(
-              page.width,
-              page.height,
+              page.width.toDouble(),
+              page.height.toDouble(),
             ),
             build: (context) => pw.Center(
               child: pw.Image(image, fit: pw.BoxFit.contain),
