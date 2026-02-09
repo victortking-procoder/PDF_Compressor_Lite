@@ -114,6 +114,11 @@ class AdService extends ChangeNotifier {
 
   // Rewarded Ad
   void loadRewardedAd({required VoidCallback onAdLoaded, required VoidCallback onAdFailedToLoad}) {
+    if (kDebugMode) {
+      print('=== REWARDED AD LOADING ===');
+      print('Starting to load rewarded ad...');
+    }
+    
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
       request: const AdRequest(),
@@ -121,11 +126,18 @@ class AdService extends ChangeNotifier {
         onAdLoaded: (ad) {
           _rewardedAd = ad;
           _setupRewardedAdCallbacks();
+          if (kDebugMode) {
+            print('✓ Rewarded ad loaded successfully!');
+          }
           onAdLoaded();
         },
         onAdFailedToLoad: (error) {
           if (kDebugMode) {
-            print('RewardedAd failed to load: $error');
+            print('✗ RewardedAd failed to load:');
+            print('  Code: ${error.code}');
+            print('  Domain: ${error.domain}');
+            print('  Message: ${error.message}');
+            print('  Response Info: ${error.responseInfo}');
           }
           onAdFailedToLoad();
         },
@@ -167,6 +179,11 @@ class AdService extends ChangeNotifier {
 
   // Interstitial Ad
   void _loadInterstitialAd() {
+    if (kDebugMode) {
+      print('=== INTERSTITIAL AD LOADING ===');
+      print('Starting to load interstitial ad...');
+    }
+    
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
       request: const AdRequest(),
@@ -176,16 +193,24 @@ class AdService extends ChangeNotifier {
           _isInterstitialAdReady = true;
           _setupInterstitialAdCallbacks();
           if (kDebugMode) {
-            print('InterstitialAd loaded successfully');
+            print('✓ InterstitialAd loaded successfully!');
           }
         },
         onAdFailedToLoad: (error) {
           _isInterstitialAdReady = false;
           if (kDebugMode) {
-            print('InterstitialAd failed to load: $error');
+            print('✗ InterstitialAd failed to load:');
+            print('  Code: ${error.code}');
+            print('  Domain: ${error.domain}');
+            print('  Message: ${error.message}');
+            print('  Response Info: ${error.responseInfo}');
+            print('  Will retry in 30 seconds...');
           }
           // Retry after 30 seconds
           Future.delayed(const Duration(seconds: 30), () {
+            if (kDebugMode) {
+              print('Retrying interstitial ad load...');
+            }
             _loadInterstitialAd();
           });
         },
@@ -214,10 +239,17 @@ class AdService extends ChangeNotifier {
   void showInterstitialAd() {
     _compressionsSinceLastAd++;
     
-    // Show ad every 2 compressions
-    if (_compressionsSinceLastAd >= 2 && _isInterstitialAdReady && _interstitialAd != null) {
+    if (kDebugMode) {
+      print('=== INTERSTITIAL AD DEBUG ===');
+      print('Compressions since last ad: $_compressionsSinceLastAd');
+      print('Ad ready: $_isInterstitialAdReady');
+      print('Ad object exists: ${_interstitialAd != null}');
+    }
+    
+    // Show ad every 1 compression for better user experience
+    if (_compressionsSinceLastAd >= 1 && _isInterstitialAdReady && _interstitialAd != null) {
       if (kDebugMode) {
-        print('Showing interstitial ad');
+        print('✓ Showing interstitial ad NOW');
       }
       _interstitialAd?.show();
       _interstitialAd = null;
@@ -225,7 +257,7 @@ class AdService extends ChangeNotifier {
       _compressionsSinceLastAd = 0;
     } else {
       if (kDebugMode) {
-        print('Interstitial ad not ready or not time yet. Count: $_compressionsSinceLastAd');
+        print('✗ Interstitial ad NOT shown - waiting or not ready');
       }
     }
   }

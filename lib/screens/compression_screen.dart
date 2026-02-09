@@ -76,16 +76,18 @@ class _CompressionScreenState extends State<CompressionScreen> {
       await adService.useCompression();
 
       if (mounted) {
-        // Show interstitial ad AFTER successful compression
-        adService.showInterstitialAd();
-
-        // Navigate to result screen
-        Navigator.pushReplacement(
+        // Navigate to result screen first
+        await Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => ResultScreen(result: result),
           ),
         );
+
+        // Show interstitial ad AFTER navigation completes
+        // Add small delay to ensure UI is stable
+        await Future.delayed(const Duration(milliseconds: 500));
+        adService.showInterstitialAd();
       }
     } catch (e) {
       if (mounted) {
