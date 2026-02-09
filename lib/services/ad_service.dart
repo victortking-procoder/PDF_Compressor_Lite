@@ -37,12 +37,16 @@ class AdService extends ChangeNotifier {
 
   RewardedAd? _rewardedAd;
   InterstitialAd? _interstitialAd;
+  BannerAd? _bannerAd;
   bool _isInterstitialAdReady = false;
+  bool _isBannerAdReady = false;
   
   int _compressionsUsedToday = 0;
   int _bonusCompressions = 0;
   int _compressionsSinceLastAd = 0;
   String? _lastResetDate;
+  
+  BannerAd? get bannerAd => _isBannerAdReady ? _bannerAd : null;
 
   int get compressionsRemaining {
     final total = maxFreeCompressions + _bonusCompressions;
@@ -58,11 +62,17 @@ class AdService extends ChangeNotifier {
     _bonusCompressions = prefs.getInt('bonus_compressions') ?? 0;
     _lastResetDate = prefs.getString('last_reset_date');
     
-    _checkAndResetDaily();
+    // Check and reset AFTER loading saved values
+    await _checkAndResetDaily();
+    
+    // Load ads
     _loadInterstitialAd();
+    
+    // Notify listeners so UI updates with correct values
+    notifyListeners();
   }
 
-  void _checkAndResetDaily() async {
+  Future<void> _checkAndResetDaily() async {
     final now = DateTime.now();
     final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     
@@ -76,7 +86,9 @@ class AdService extends ChangeNotifier {
       await prefs.setInt('bonus_compressions', 0);
       await prefs.setString('last_reset_date', today);
       
-      notifyListeners();
+      if (kDebugMode) {
+        print('Daily reset: new date is $today');
+      }
     }
   }
 
@@ -172,7 +184,7 @@ class AdService extends ChangeNotifier {
           if (kDebugMode) {
             print('InterstitialAd failed to load: $error');
           }
-          // Retry loading after 30 seconds
+          // Retry after 30 seconds
           Future.delayed(const Duration(seconds: 30), () {
             _loadInterstitialAd();
           });
@@ -186,7 +198,7 @@ class AdService extends ChangeNotifier {
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
         _isInterstitialAdReady = false;
-        _loadInterstitialAd(); // Load next ad
+        _loadInterstitialAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         if (kDebugMode) {
@@ -194,7 +206,7 @@ class AdService extends ChangeNotifier {
         }
         ad.dispose();
         _isInterstitialAdReady = false;
-        _loadInterstitialAd(); // Load next ad
+        _loadInterstitialAd();
       },
     );
   }
@@ -218,10 +230,38 @@ class AdService extends ChangeNotifier {
     }
   }
 
+  // Banner Ad
+  void loadBannerAd() {
+    _bannerAd = BannerAd(
+      adUnitId: bannerAdUnitId,
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          _isBannerAdReady = true;
+          notifyListeners();
+          if (kDebugMode) {
+            print('Banner ad loaded');
+          }
+        },
+        onAdFailedToLoad: (ad, error) {
+          _isBannerAdReady = false;
+          ad.dispose();
+          if (kDebugMode) {
+            print('Banner ad failed to load: $error');
+          }
+        },
+      ),
+    );
+    
+    _bannerAd?.load();
+  }
+
   @override
   void dispose() {
     _rewardedAd?.dispose();
     _interstitialAd?.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 }

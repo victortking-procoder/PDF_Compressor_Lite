@@ -8,20 +8,18 @@ import 'services/storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Run app immediately, initialize services in background
   runApp(const AppInitializer());
 }
 
 class AppInitializer extends StatefulWidget {
   const AppInitializer({super.key});
-
   @override
   State<AppInitializer> createState() => _AppInitializerState();
 }
 
 class _AppInitializerState extends State<AppInitializer> {
   StorageService? _storageService;
+  AdService? _adService;
   bool _initialized = false;
   
   @override
@@ -31,29 +29,23 @@ class _AppInitializerState extends State<AppInitializer> {
   }
   
   Future<void> _initializeServices() async {
-    // Initialize services with timeouts to prevent hanging
-    
-    // Initialize AdMob in background (don't wait for it)
-    MobileAds.instance.initialize().timeout(
-      const Duration(seconds: 5),
-    ).catchError((e) {
+    MobileAds.instance.initialize().timeout(const Duration(seconds: 5),).catchError((e) {
       debugPrint('AdMob initialization error: $e');
     });
     
-    // Initialize storage service
     final storageService = StorageService();
     try {
-      await storageService.init().timeout(
-        const Duration(seconds: 3),
-      );
+      await storageService.init().timeout(const Duration(seconds: 3),);
     } catch (e) {
       debugPrint('Storage initialization error: $e');
     }
     
-    // Mark as initialized and rebuild
+    final adService = AdService();
+    
     if (mounted) {
       setState(() {
         _storageService = storageService;
+        _adService = adService;
         _initialized = true;
       });
     }
@@ -61,19 +53,14 @@ class _AppInitializerState extends State<AppInitializer> {
   
   @override
   Widget build(BuildContext context) {
-    if (!_initialized || _storageService == null) {
-      // Show simple loading screen
+    if (!_initialized || _storageService == null || _adService == null) {
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
           body: Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-              children: const [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Initializing...'),
-              ],
+              children: const [CircularProgressIndicator(), SizedBox(height: 16), Text('Initializing...')],
             ),
           ),
         ),
@@ -82,7 +69,7 @@ class _AppInitializerState extends State<AppInitializer> {
     
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider<AdService>(create: (_) => AdService()),
+        ChangeNotifierProvider<AdService>.value(value: _adService!),
         ChangeNotifierProvider<StorageService>.value(value: _storageService!),
         Provider<CompressionService>(create: (_) => CompressionService()),
       ],
@@ -101,36 +88,18 @@ class PDFCompressorApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.light,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.light),
         cardTheme: CardThemeData(
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.grey.shade200,
-              width: 1,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade200, width: 1)),
         ),
       ),
       darkTheme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.blue,
-          brightness: Brightness.dark,
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue, brightness: Brightness.dark),
         cardTheme: CardThemeData(
           elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-            side: BorderSide(
-              color: Colors.grey.shade800,
-              width: 1,
-            ),
-          ),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: Colors.grey.shade800, width: 1)),
         ),
       ),
       themeMode: ThemeMode.system,
