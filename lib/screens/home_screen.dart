@@ -26,9 +26,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _initializeApp() async {
-    final adService = context.read<AdService>();
-    await adService.init();
-    adService.loadBannerAd();
+    // Use addPostFrameCallback to access context after build
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        final adService = context.read<AdService>();
+        await adService.init();
+        adService.loadBannerAd();
+      }
+    });
   }
 
   Future<void> _pickPdf() async {
