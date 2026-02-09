@@ -53,21 +53,6 @@ android {
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
         multiDexEnabled true
-        
-        // Reduce APK size by splitting ABIs
-        ndk {
-            abiFilters 'armeabi-v7a', 'arm64-v8a', 'x86_64'
-        }
-    }
-    
-    // Enable ABI splits for smaller APKs
-    splits {
-        abi {
-            enable true
-            reset()
-            include 'armeabi-v7a', 'arm64-v8a', 'x86_64'
-            universalApk true // Also generate a universal APK
-        }
     }
 
     signingConfigs {
@@ -95,29 +80,15 @@ android {
     }
 
     buildTypes {
-        debug {
-            // Optimize debug builds too
-            minifyEnabled false
-            shrinkResources false
-        }
-        
         release {
             // Only use release signing if properly configured
             if ((System.getenv("CI") && System.getenv("CM_KEYSTORE_PATH")) || 
                 (keystorePropertiesFile.exists() && keystoreProperties['storeFile'])) {
                 signingConfig signingConfigs.release
             }
-            
-            // Aggressive size optimization
             minifyEnabled true
             shrinkResources true
-            
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            
-            // Additional optimizations
-            ndk {
-                debugSymbolLevel 'SYMBOL_TABLE'
-            }
         }
     }
 }

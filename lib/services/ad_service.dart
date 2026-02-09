@@ -7,30 +7,29 @@ class AdService extends ChangeNotifier {
   static const int maxFreeCompressions = 4;
   static const int rewardedAdBonus = 2;
   
-  // AdMob Test IDs
   static String get rewardedAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917'; // Test ID
+      return 'ca-app-pub-3940256099942544/5224354917';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313'; // Test ID
+      return 'ca-app-pub-3940256099942544/1712485313';
     }
     throw UnsupportedError('Unsupported platform');
   }
 
   static String get interstitialAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // Test ID
+      return 'ca-app-pub-3940256099942544/1033173712';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/4411468910'; // Test ID
+      return 'ca-app-pub-3940256099942544/4411468910';
     }
     throw UnsupportedError('Unsupported platform');
   }
 
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Test ID
+      return 'ca-app-pub-3940256099942544/6300978111';
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716'; // Test ID
+      return 'ca-app-pub-3940256099942544/2934735716';
     }
     throw UnsupportedError('Unsupported platform');
   }
@@ -62,13 +61,8 @@ class AdService extends ChangeNotifier {
     _bonusCompressions = prefs.getInt('bonus_compressions') ?? 0;
     _lastResetDate = prefs.getString('last_reset_date');
     
-    // Check and reset AFTER loading saved values
     await _checkAndResetDaily();
-    
-    // Load ads
     _loadInterstitialAd();
-    
-    // Notify listeners so UI updates with correct values
     notifyListeners();
   }
 
@@ -112,7 +106,6 @@ class AdService extends ChangeNotifier {
     notifyListeners();
   }
 
-  // Rewarded Ad
   void loadRewardedAd({required VoidCallback onAdLoaded, required VoidCallback onAdFailedToLoad}) {
     RewardedAd.load(
       adUnitId: rewardedAdUnitId,
@@ -165,7 +158,6 @@ class AdService extends ChangeNotifier {
     return rewarded;
   }
 
-  // Interstitial Ad
   void _loadInterstitialAd() {
     InterstitialAd.load(
       adUnitId: interstitialAdUnitId,
@@ -184,7 +176,6 @@ class AdService extends ChangeNotifier {
           if (kDebugMode) {
             print('InterstitialAd failed to load: $error');
           }
-          // Retry after 30 seconds
           Future.delayed(const Duration(seconds: 30), () {
             _loadInterstitialAd();
           });
@@ -214,7 +205,6 @@ class AdService extends ChangeNotifier {
   void showInterstitialAd() {
     _compressionsSinceLastAd++;
     
-    // Show ad every 2 compressions
     if (_compressionsSinceLastAd >= 2 && _isInterstitialAdReady && _interstitialAd != null) {
       if (kDebugMode) {
         print('Showing interstitial ad');
@@ -230,7 +220,6 @@ class AdService extends ChangeNotifier {
     }
   }
 
-  // Banner Ad
   void loadBannerAd() {
     _bannerAd = BannerAd(
       adUnitId: bannerAdUnitId,

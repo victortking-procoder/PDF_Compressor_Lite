@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../services/ad_service.dart';
 import '../services/storage_service.dart';
 import '../widgets/history_item.dart';
@@ -28,10 +28,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _initializeApp() async {
     final adService = context.read<AdService>();
     await adService.init();
+    adService.loadBannerAd();
   }
 
   Future<void> _pickPdf() async {
-    }
+    // FilePicker uses Storage Access Framework - no permissions needed
 
     // Check compression limit
     final adService = context.read<AdService>();
@@ -103,9 +104,12 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
+      body: Column(
+        children: [
+          Expanded(
+            child: SafeArea(
+              child: Column(
+                children: [
             // Free compressions counter
             Container(
               margin: const EdgeInsets.all(16),
@@ -256,6 +260,18 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
           ],
         ),
+      ),
+          ),
+          
+          // Banner Ad at bottom
+          if (adService.bannerAd != null)
+            Container(
+              alignment: Alignment.center,
+              width: adService.bannerAd!.size.width.toDouble(),
+              height: adService.bannerAd!.size.height.toDouble(),
+              child: AdWidget(ad: adService.bannerAd!),
+            ),
+        ],
       ),
     );
   }
