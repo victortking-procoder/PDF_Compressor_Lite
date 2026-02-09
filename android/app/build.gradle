@@ -57,27 +57,33 @@ android {
 
     signingConfigs {
         release {
+            // Only configure if we have signing info
+            def hasSigningConfig = false
+            
             // Codemagic signing (CI environment)
-            if (System.getenv()["CI"]) {
-                storeFile file(System.getenv()["CM_KEYSTORE_PATH"])
-                storePassword System.getenv()["CM_KEYSTORE_PASSWORD"]
-                keyAlias System.getenv()["CM_KEY_ALIAS"]
-                keyPassword System.getenv()["CM_KEY_PASSWORD"]
+            if (System.getenv("CI") && System.getenv("CM_KEYSTORE_PATH")) {
+                storeFile file(System.getenv("CM_KEYSTORE_PATH"))
+                storePassword System.getenv("CM_KEYSTORE_PASSWORD")
+                keyAlias System.getenv("CM_KEY_ALIAS")
+                keyPassword System.getenv("CM_KEY_PASSWORD")
+                hasSigningConfig = true
             } 
             // Local signing (key.properties file)
-            else if (keystorePropertiesFile.exists()) {
+            else if (keystorePropertiesFile.exists() && keystoreProperties['storeFile']) {
                 keyAlias keystoreProperties['keyAlias']
                 keyPassword keystoreProperties['keyPassword']
-                storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
+                storeFile file(keystoreProperties['storeFile'])
                 storePassword keystoreProperties['storePassword']
+                hasSigningConfig = true
             }
         }
     }
 
     buildTypes {
         release {
-            // Only use release signing if configured
-            if (System.getenv()["CI"] || keystorePropertiesFile.exists()) {
+            // Only use release signing if properly configured
+            if ((System.getenv("CI") && System.getenv("CM_KEYSTORE_PATH")) || 
+                (keystorePropertiesFile.exists() && keystoreProperties['storeFile'])) {
                 signingConfig signingConfigs.release
             }
             minifyEnabled true
