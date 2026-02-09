@@ -12,7 +12,15 @@ class StorageService extends ChangeNotifier {
   List<CompressedFile> get history => List.unmodifiable(_history);
 
   Future<void> init() async {
-    await _loadHistory();
+    try {
+      await _loadHistory();
+    } catch (e) {
+      if (kDebugMode) {
+        print('Failed to initialize storage service: $e');
+      }
+      // Initialize with empty history if loading fails
+      _history = [];
+    }
   }
 
   Future<void> _loadHistory() async {

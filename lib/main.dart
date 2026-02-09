@@ -6,26 +6,98 @@ import 'services/ad_service.dart';
 import 'services/compression_service.dart';
 import 'services/storage_service.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize AdMob
-  await MobileAds.instance.initialize();
+  // Run app immediately, initialize services in background
+  runApp(const AppInitializer());
+}
+
+class AppInitializer extends StatefulWidget {
+  const AppInitializer({super.key});
+
+  @override
+  State<AppInitializer> createState() => _AppInitializerState();
+}
+
+class _AppInitializerState extends State<AppInitializer> {
+  StorageService? _storageService;
+  bool _initialized = false;
   
-  // Initialize services
-  final storageService = StorageService();
-  await storageService.init();
+  @override
+  void initState() {
+    super.initState();
+    _initializeServices();
+  }
   
-  runApp(
-    MultiProvider(
+  Future<void> _initializeServices() async {
+    try {
+      // Initialize AdMob with short timeout (don't block on this)
+      MobileAds.instance.initialize().timeout(
+        const Duration(seconds: 3),
+        onTimeout: () {
+          debugPrint('AdMob initialization timed out - continuing anyway');
+          return null;
+        },
+      ).catchError((e) {
+        debugPrint('AdMob initialization error: $e');
+      });
+      
+      // Initialize storage service with timeout
+      final storageService = StorageService();
+      await storageService.init().timeout(
+        const Duration(seconds: 2),
+        onTimeout: () {
+          debugPrint('Storage initialization timed out - using empty storage');
+        },
+      ).catchError((e) {
+        debugPrint('Storage initialization error: $e');
+      });
+      
+      setState(() {
+        _storageService = storageService;
+        _initialized = true;
+      });
+    } catch (e) {
+      debugPrint('Initialization error: $e');
+      // Continue anyway with fallback
+      setState(() {
+        _storageService = StorageService();
+        _initialized = true;
+      });
+    }
+  }
+  
+  @override
+  Widget build(BuildContext context) {
+    if (!_initialized || _storageService == null) {
+      // Show simple loading while initializing
+      return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Loading...'),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    return MultiProvider(
       providers: [
         Provider<AdService>(create: (_) => AdService()),
-        Provider<StorageService>.value(value: storageService),
+        Provider<StorageService>.value(value: _storageService!),
         Provider<CompressionService>(create: (_) => CompressionService()),
       ],
       child: const PDFCompressorApp(),
-    ),
-  );
+    );
+  }
 }
 
 class PDFCompressorApp extends StatelessWidget {
