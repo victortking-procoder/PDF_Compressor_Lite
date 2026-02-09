@@ -71,20 +71,12 @@ android {
                 storeFile keystoreProperties['storeFile'] ? file(keystoreProperties['storeFile']) : null
                 storePassword keystoreProperties['storePassword']
             }
-            // Debug signing (fallback)
-            else {
-                // Use debug signing when no release signing is configured
-                storeFile null
-                storePassword null
-                keyAlias null
-                keyPassword null
-            }
         }
     }
 
     buildTypes {
         release {
-            // Only use release signing if it's configured
+            // Only use release signing if configured
             if (System.getenv()["CI"] || keystorePropertiesFile.exists()) {
                 signingConfig signingConfigs.release
             }
