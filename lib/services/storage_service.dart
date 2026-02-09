@@ -52,6 +52,7 @@ class StorageService extends ChangeNotifier {
   Future<void> addToHistory(CompressedFile file) async {
     _history.insert(0, file);
     
+    // Keep only recent items
     if (_history.length > _maxHistoryItems) {
       _history = _history.sublist(0, _maxHistoryItems);
     }

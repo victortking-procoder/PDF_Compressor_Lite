@@ -8,6 +8,8 @@ import 'services/storage_service.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Run app immediately, initialize services in background
   runApp(const AppInitializer());
 }
 
@@ -30,12 +32,14 @@ class _AppInitializerState extends State<AppInitializer> {
   }
   
   Future<void> _initializeServices() async {
+    // Initialize AdMob in background (don't wait for it)
     MobileAds.instance.initialize().timeout(
       const Duration(seconds: 5),
     ).catchError((e) {
       debugPrint('AdMob initialization error: $e');
     });
     
+    // Initialize storage service
     final storageService = StorageService();
     try {
       await storageService.init().timeout(
@@ -45,8 +49,11 @@ class _AppInitializerState extends State<AppInitializer> {
       debugPrint('Storage initialization error: $e');
     }
     
+    // Initialize ad service
     final adService = AdService();
+    // Note: AdService.init() will be called from HomeScreen
     
+    // Mark as initialized and rebuild
     if (mounted) {
       setState(() {
         _storageService = storageService;
@@ -59,6 +66,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     if (!_initialized || _storageService == null || _adService == null) {
+      // Show simple loading screen
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
