@@ -7,30 +7,30 @@ class AdService extends ChangeNotifier {
   static const int maxFreeCompressions = 4;
   static const int rewardedAdBonus = 2;
   
-  // AdMob Test IDs
+  // AdMob IDs
   static String get rewardedAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/5224354917'; // Test ID
+      return 'ca-app-pub-4724124049234023/4719912270'; // Production ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/1712485313'; // Test ID
+      return 'ca-app-pub-3940256099942544/1712485313'; // Test ID (iOS not configured yet)
     }
     throw UnsupportedError('Unsupported platform');
   }
 
   static String get interstitialAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/1033173712'; // Test ID
+      return 'ca-app-pub-4724124049234023/9230729279'; // Production ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/4411468910'; // Test ID
+      return 'ca-app-pub-3940256099942544/4411468910'; // Test ID (iOS not configured yet)
     }
     throw UnsupportedError('Unsupported platform');
   }
 
   static String get bannerAdUnitId {
     if (Platform.isAndroid) {
-      return 'ca-app-pub-3940256099942544/6300978111'; // Test ID
+      return 'ca-app-pub-4724124049234023/9640222578'; // Production ID
     } else if (Platform.isIOS) {
-      return 'ca-app-pub-3940256099942544/2934735716'; // Test ID
+      return 'ca-app-pub-3940256099942544/2934735716'; // Test ID (iOS not configured yet)
     }
     throw UnsupportedError('Unsupported platform');
   }
