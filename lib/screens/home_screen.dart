@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../services/ad_service.dart';
 import '../services/storage_service.dart';
@@ -31,18 +30,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickPdf() async {
-    // Check permissions
-    if (Platform.isAndroid) {
-      final status = await Permission.storage.request();
-      if (!status.isGranted && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Storage permission is required to select files'),
-          ),
-        );
-        return;
-      }
-    }
+    // FilePicker uses Storage Access Framework (SAF) on Android,
+    // which doesn't require permissions - user grants access per-file
 
     // Check compression limit
     final adService = context.read<AdService>();
