@@ -32,12 +32,39 @@ class _AppInitializerState extends State<AppInitializer> {
   }
   
   Future<void> _initializeServices() async {
-    // Initialize AdMob in background (don't wait for it)
-    MobileAds.instance.initialize().timeout(
-      const Duration(seconds: 5),
-    ).catchError((e) {
-      debugPrint('AdMob initialization error: $e');
-    });
+    // Initialize AdMob FIRST and WAIT for it (critical for ads to work)
+    try {
+      debugPrint('🚀 Starting AdMob initialization...');
+      
+      // Configure AdMob for test mode
+      final params = RequestConfiguration(
+        testDeviceIds: ['YOUR_TEST_DEVICE_ID'], // Add your device ID for testing
+      );
+      MobileAds.instance.updateRequestConfiguration(params);
+      
+      // Initialize AdMob SDK
+      final initFuture = MobileAds.instance.initialize();
+      await initFuture;
+      
+      debugPrint('✅ AdMob initialized successfully!');
+      
+      // Give extra time for SDK to be fully ready
+      await Future.delayed(const Duration(seconds: 1));
+      debugPrint('✅ AdMob ready to load ads');
+      
+    } catch (e) {
+      debugPrint('❌ AdMob initialization error: $e');
+      // Retry once after 2 seconds
+      await Future.delayed(const Duration(seconds: 2));
+      try {
+        debugPrint('🔄 Retrying AdMob initialization...');
+        await MobileAds.instance.initialize();
+        await Future.delayed(const Duration(seconds: 1));
+        debugPrint('✅ AdMob initialized successfully on retry!');
+      } catch (e2) {
+        debugPrint('❌ AdMob initialization failed again: $e2');
+      }
+    }
     
     // Initialize storage service
     final storageService = StorageService();
@@ -51,7 +78,7 @@ class _AppInitializerState extends State<AppInitializer> {
     
     // Initialize ad service
     final adService = AdService();
-    // Note: AdService.init() will be called from HomeScreen
+    // AdService.init() will be called from HomeScreen AFTER MobileAds is ready
     
     // Mark as initialized and rebuild
     if (mounted) {

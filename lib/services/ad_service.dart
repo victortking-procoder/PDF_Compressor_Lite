@@ -65,7 +65,17 @@ class AdService extends ChangeNotifier {
     // Check and reset AFTER loading saved values
     await _checkAndResetDaily();
     
+    if (kDebugMode) {
+      print('📱 AdService initialized - Compressions remaining: $compressionsRemaining');
+    }
+    
+    // Wait a bit to ensure MobileAds is fully ready
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     // Load ads
+    if (kDebugMode) {
+      print('📢 Starting to load ads...');
+    }
     _loadInterstitialAd();
     
     // Notify listeners so UI updates with correct values
@@ -147,13 +157,23 @@ class AdService extends ChangeNotifier {
 
   void _setupRewardedAdCallbacks() {
     _rewardedAd?.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        if (kDebugMode) {
+          print('✅ Rewarded ad displayed successfully');
+        }
+      },
       onAdDismissedFullScreenContent: (ad) {
+        if (kDebugMode) {
+          print('Rewarded ad dismissed');
+        }
         ad.dispose();
         _rewardedAd = null;
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         if (kDebugMode) {
-          print('RewardedAd failed to show: $error');
+          print('✗ RewardedAd failed to show:');
+          print('  Code: ${error.code}');
+          print('  Message: ${error.message}');
         }
         ad.dispose();
         _rewardedAd = null;
@@ -162,16 +182,34 @@ class AdService extends ChangeNotifier {
   }
 
   Future<bool> showRewardedAd() async {
-    if (_rewardedAd == null) return false;
+    if (_rewardedAd == null) {
+      if (kDebugMode) {
+        print('❌ Cannot show rewarded ad - ad is null');
+      }
+      return false;
+    }
+
+    if (kDebugMode) {
+      print('🎬 Attempting to show rewarded ad...');
+    }
 
     bool rewarded = false;
     
-    await _rewardedAd?.show(
-      onUserEarnedReward: (ad, reward) async {
-        rewarded = true;
-        await addBonusCompressions();
-      },
-    );
+    try {
+      await _rewardedAd?.show(
+        onUserEarnedReward: (ad, reward) async {
+          if (kDebugMode) {
+            print('🎉 User earned reward! Amount: ${reward.amount}, Type: ${reward.type}');
+          }
+          rewarded = true;
+          await addBonusCompressions();
+        },
+      );
+    } catch (e) {
+      if (kDebugMode) {
+        print('❌ Error showing rewarded ad: $e');
+      }
+    }
 
     _rewardedAd = null;
     return rewarded;
@@ -220,14 +258,24 @@ class AdService extends ChangeNotifier {
 
   void _setupInterstitialAdCallbacks() {
     _interstitialAd?.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        if (kDebugMode) {
+          print('✅ Interstitial ad displayed successfully');
+        }
+      },
       onAdDismissedFullScreenContent: (ad) {
+        if (kDebugMode) {
+          print('Interstitial ad dismissed - loading new ad');
+        }
         ad.dispose();
         _isInterstitialAdReady = false;
         _loadInterstitialAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         if (kDebugMode) {
-          print('InterstitialAd failed to show: $error');
+          print('✗ InterstitialAd failed to show:');
+          print('  Code: ${error.code}');
+          print('  Message: ${error.message}');
         }
         ad.dispose();
         _isInterstitialAdReady = false;
@@ -249,15 +297,32 @@ class AdService extends ChangeNotifier {
     // Show ad every 1 compression for better user experience
     if (_compressionsSinceLastAd >= 1 && _isInterstitialAdReady && _interstitialAd != null) {
       if (kDebugMode) {
-        print('✓ Showing interstitial ad NOW');
+        print('🎬 Attempting to show interstitial ad NOW');
       }
-      _interstitialAd?.show();
-      _interstitialAd = null;
-      _isInterstitialAdReady = false;
-      _compressionsSinceLastAd = 0;
+      
+      try {
+        _interstitialAd?.show();
+        _interstitialAd = null;
+        _isInterstitialAdReady = false;
+        _compressionsSinceLastAd = 0;
+        
+        if (kDebugMode) {
+          print('✓ Interstitial ad show() called successfully');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          print('❌ Error calling show() on interstitial: $e');
+        }
+        _interstitialAd = null;
+        _isInterstitialAdReady = false;
+        _loadInterstitialAd();
+      }
     } else {
       if (kDebugMode) {
-        print('✗ Interstitial ad NOT shown - waiting or not ready');
+        print('✗ Interstitial ad NOT shown:');
+        if (_compressionsSinceLastAd < 1) print('  - Not enough compressions');
+        if (!_isInterstitialAdReady) print('  - Ad not ready');
+        if (_interstitialAd == null) print('  - Ad object is null');
       }
     }
   }

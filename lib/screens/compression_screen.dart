@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -85,8 +86,11 @@ class _CompressionScreenState extends State<CompressionScreen> {
         );
 
         // Show interstitial ad AFTER navigation completes
-        // Add small delay to ensure UI is stable
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Increase delay to ensure UI is completely stable
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (kDebugMode) {
+          print('📱 Now attempting to show interstitial ad after navigation...');
+        }
         adService.showInterstitialAd();
       }
     } catch (e) {
