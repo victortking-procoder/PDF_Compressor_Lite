@@ -37,9 +37,11 @@ class AdService extends ChangeNotifier {
 
   RewardedAd? _rewardedAd;
   InterstitialAd? _interstitialAd;
+  bool _isInterstitialAdReady = false;
   
   int _compressionsUsedToday = 0;
   int _bonusCompressions = 0;
+  int _compressionsSinceLastAd = 0;
   String? _lastResetDate;
 
   int get compressionsRemaining {
@@ -61,7 +63,8 @@ class AdService extends ChangeNotifier {
   }
 
   void _checkAndResetDaily() async {
-    final today = DateTime.now().toIso8601String().split('T')[0];
+    final now = DateTime.now();
+    final today = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
     
     if (_lastResetDate != today) {
       _compressionsUsedToday = 0;
@@ -139,10 +142,10 @@ class AdService extends ChangeNotifier {
 
     bool rewarded = false;
     
-    _rewardedAd?.show(
-      onUserEarnedReward: (ad, reward) {
+    await _rewardedAd?.show(
+      onUserEarnedReward: (ad, reward) async {
         rewarded = true;
-        addBonusCompressions();
+        await addBonusCompressions();
       },
     );
 
@@ -158,12 +161,21 @@ class AdService extends ChangeNotifier {
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
           _interstitialAd = ad;
+          _isInterstitialAdReady = true;
           _setupInterstitialAdCallbacks();
+          if (kDebugMode) {
+            print('InterstitialAd loaded successfully');
+          }
         },
         onAdFailedToLoad: (error) {
+          _isInterstitialAdReady = false;
           if (kDebugMode) {
             print('InterstitialAd failed to load: $error');
           }
+          // Retry loading after 30 seconds
+          Future.delayed(const Duration(seconds: 30), () {
+            _loadInterstitialAd();
+          });
         },
       ),
     );
@@ -173,6 +185,7 @@ class AdService extends ChangeNotifier {
     _interstitialAd?.fullScreenContentCallback = FullScreenContentCallback(
       onAdDismissedFullScreenContent: (ad) {
         ad.dispose();
+        _isInterstitialAdReady = false;
         _loadInterstitialAd(); // Load next ad
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
@@ -180,15 +193,28 @@ class AdService extends ChangeNotifier {
           print('InterstitialAd failed to show: $error');
         }
         ad.dispose();
+        _isInterstitialAdReady = false;
         _loadInterstitialAd(); // Load next ad
       },
     );
   }
 
   void showInterstitialAd() {
-    if (_interstitialAd != null) {
+    _compressionsSinceLastAd++;
+    
+    // Show ad every 2 compressions
+    if (_compressionsSinceLastAd >= 2 && _isInterstitialAdReady && _interstitialAd != null) {
+      if (kDebugMode) {
+        print('Showing interstitial ad');
+      }
       _interstitialAd?.show();
       _interstitialAd = null;
+      _isInterstitialAdReady = false;
+      _compressionsSinceLastAd = 0;
+    } else {
+      if (kDebugMode) {
+        print('Interstitial ad not ready or not time yet. Count: $_compressionsSinceLastAd');
+      }
     }
   }
 

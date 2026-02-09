@@ -28,11 +28,11 @@ enum CompressionLevel {
   int get quality {
     switch (this) {
       case CompressionLevel.light:
-        return 85;
+        return 150; // High quality DPI
       case CompressionLevel.recommended:
-        return 70;
+        return 100; // Medium quality DPI
       case CompressionLevel.strong:
-        return 50;
+        return 72; // Lower quality DPI for max compression
     }
   }
 

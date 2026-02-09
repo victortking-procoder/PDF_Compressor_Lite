@@ -82,7 +82,7 @@ class _AppInitializerState extends State<AppInitializer> {
     
     return MultiProvider(
       providers: [
-        Provider<AdService>(create: (_) => AdService()),
+        ChangeNotifierProvider<AdService>(create: (_) => AdService()),
         ChangeNotifierProvider<StorageService>.value(value: _storageService!),
         Provider<CompressionService>(create: (_) => CompressionService()),
       ],

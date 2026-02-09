@@ -30,8 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _pickPdf() async {
-    // FilePicker uses Storage Access Framework (SAF) on Android,
-    // which doesn't require permissions - user grants access per-file
+    // FilePicker uses Storage Access Framework (SAF) which doesn't require permissions
 
     // Check compression limit
     final adService = context.read<AdService>();

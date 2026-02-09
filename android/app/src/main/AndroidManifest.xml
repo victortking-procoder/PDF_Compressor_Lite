@@ -3,9 +3,6 @@
     <!-- Required permissions -->
     <uses-permission android:name="android.permission.INTERNET"/>
     
-    <!-- For Android 13+ we don't need READ_MEDIA permissions for PDFs 
-         because FilePicker uses Storage Access Framework (SAF) -->
-    
     <application
         android:label="PDF Compressor Lite"
         android:name="${applicationName}"
