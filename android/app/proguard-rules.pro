@@ -12,3 +12,7 @@
 
 # PDF library
 -keep class com.itextpdf.** { *; }
+
+# Play Core library (required by Flutter)
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
