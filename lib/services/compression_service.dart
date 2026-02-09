@@ -18,47 +18,40 @@ class CompressionService {
 
       // Read the original PDF
       final bytes = await inputFile.readAsBytes();
-      final document = await PdfDocument.openData(bytes);
-
+      
       onProgress(0.3);
 
       // Create new PDF with compression
-      final pdf = pw.Document();
-      final pageCount = document.pagesCount;
+      final pdf = pw.Document(compress: true);
+      
+      int pageIndex = 0;
+      
+      // Rasterize each page
+      await for (final page in Printing.raster(
+        bytes,
+        dpi: level.quality.toDouble(), // Use quality as DPI
+      )) {
+        onProgress(0.3 + (0.5 * (pageIndex / 10))); // Estimate progress
 
-      for (int i = 0; i < pageCount; i++) {
-        onProgress(0.3 + (0.5 * (i / pageCount)));
+        // Convert page to PNG with compression
+        final pageImage = await page.toPng();
 
-        // Rasterize page
-        final page = await document.getPage(i + 1);
-        final pageImage = await page.render(
-          width: (page.width * level.imageScale).toInt(),
-          height: (page.height * level.imageScale).toInt(),
-          format: PdfPageImageFormat.jpeg,
-          backgroundColor: '#FFFFFF',
-          quality: level.quality,
-        );
+        final image = pw.MemoryImage(pageImage);
 
-        if (pageImage != null) {
-          final image = pw.MemoryImage(pageImage.bytes);
-
-          pdf.addPage(
-            pw.Page(
-              pageFormat: PdfPageFormat(
-                page.width,
-                page.height,
-              ),
-              build: (context) => pw.Center(
-                child: pw.Image(image, fit: pw.BoxFit.contain),
-              ),
+        pdf.addPage(
+          pw.Page(
+            pageFormat: PdfPageFormat(
+              page.width,
+              page.height,
             ),
-          );
-        }
-
-        await page.close();
+            build: (context) => pw.Center(
+              child: pw.Image(image, fit: pw.BoxFit.contain),
+            ),
+          ),
+        );
+        
+        pageIndex++;
       }
-
-      await document.close();
 
       onProgress(0.9);
 
