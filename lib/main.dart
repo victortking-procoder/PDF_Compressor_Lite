@@ -83,7 +83,7 @@ class _AppInitializerState extends State<AppInitializer> {
     return MultiProvider(
       providers: [
         Provider<AdService>(create: (_) => AdService()),
-        Provider<StorageService>.value(value: _storageService!),
+        ChangeNotifierProvider<StorageService>.value(value: _storageService!),
         Provider<CompressionService>(create: (_) => CompressionService()),
       ],
       child: const PDFCompressorApp(),
