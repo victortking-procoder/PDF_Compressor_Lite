@@ -31,38 +31,29 @@ class _AppInitializerState extends State<AppInitializer> {
   }
   
   Future<void> _initializeServices() async {
+    // Initialize services with timeouts to prevent hanging
+    
+    // Initialize AdMob in background (don't wait for it)
+    MobileAds.instance.initialize().timeout(
+      const Duration(seconds: 5),
+    ).catchError((e) {
+      debugPrint('AdMob initialization error: $e');
+    });
+    
+    // Initialize storage service
+    final storageService = StorageService();
     try {
-      // Initialize AdMob with short timeout (don't block on this)
-      MobileAds.instance.initialize().timeout(
-        const Duration(seconds: 3),
-        onTimeout: () {
-          debugPrint('AdMob initialization timed out - continuing anyway');
-          return null;
-        },
-      ).catchError((e) {
-        debugPrint('AdMob initialization error: $e');
-      });
-      
-      // Initialize storage service with timeout
-      final storageService = StorageService();
       await storageService.init().timeout(
-        const Duration(seconds: 2),
-        onTimeout: () {
-          debugPrint('Storage initialization timed out - using empty storage');
-        },
-      ).catchError((e) {
-        debugPrint('Storage initialization error: $e');
-      });
-      
+        const Duration(seconds: 3),
+      );
+    } catch (e) {
+      debugPrint('Storage initialization error: $e');
+    }
+    
+    // Mark as initialized and rebuild
+    if (mounted) {
       setState(() {
         _storageService = storageService;
-        _initialized = true;
-      });
-    } catch (e) {
-      debugPrint('Initialization error: $e');
-      // Continue anyway with fallback
-      setState(() {
-        _storageService = StorageService();
         _initialized = true;
       });
     }
@@ -71,7 +62,7 @@ class _AppInitializerState extends State<AppInitializer> {
   @override
   Widget build(BuildContext context) {
     if (!_initialized || _storageService == null) {
-      // Show simple loading while initializing
+      // Show simple loading screen
       return MaterialApp(
         debugShowCheckedModeBanner: false,
         home: Scaffold(
@@ -81,7 +72,7 @@ class _AppInitializerState extends State<AppInitializer> {
               children: const [
                 CircularProgressIndicator(),
                 SizedBox(height: 16),
-                Text('Loading...'),
+                Text('Initializing...'),
               ],
             ),
           ),

@@ -18,7 +18,6 @@ class StorageService extends ChangeNotifier {
       if (kDebugMode) {
         print('Failed to initialize storage service: $e');
       }
-      // Initialize with empty history if loading fails
       _history = [];
     }
   }
